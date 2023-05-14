@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Net.Sockets;
+using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using SaveSystem;
@@ -34,8 +37,8 @@ namespace SphereBuilder
             Application.Run(new LoadingScreen());
         }
 
-        private const string _sphereImagePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SphereImage.jpeg";
-        private const string _saveFilePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SaveData.save";
+        
+        private const string _helperPath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\help.chm";
         private int _maxRadius = 20;
         private int _minRadius = 1;
 
@@ -63,36 +66,13 @@ namespace SphereBuilder
         private const float _minAngle = 0.0f;
         private const float _maxAngle = 359.0f;
 
-        private int numberOfSpheres = 1;
+        private int _numberOfSpheres = 1;
 
         void ReadDataFromFile() // Чтие последних сохранённых настроек приложения
         {
-            BinaryFormatter _formatter;
-            FileStream _stream;
-            MySphere data;
-            if (File.Exists(_saveFilePath) == false)
-            {
-                _formatter = new BinaryFormatter();
-                _stream = new FileStream(_saveFilePath, FileMode.Create);
-                data = new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ);
-                _formatter.Serialize(_stream, data);
-                _stream.Close();
-
-                MessageBox.Show("a");
-                _formatter = null;
-                _stream = null;
-                data = null;
-                
-            }
-            // Инициализация нового бинарного конвертатора
-            _formatter = new BinaryFormatter();
-            // Инициализация поля взаимодействия с файлами
-            _stream = new FileStream(_saveFilePath, FileMode.Open);
-            // Инициализация поля для сохранения данных (RetainedInfo) прочтенной из файла инфо
-            data = _formatter.Deserialize(_stream) as MySphere;
-            // Закрытие файла
-            _stream.Close();
-
+            
+            MySphere data = SaveSystem.LoadSettings();
+            
             // Запись сохранённых настроек
             _radius = data.Radius;
             _style = data.Style;
@@ -102,11 +82,12 @@ namespace SphereBuilder
             //_deltaRotate = data.
 
             _sphereColor = data.Color;
+            _numberOfSpheres = data.Count;
 
             _translationX = data.TranslationX;
             _translationY = data.TranslationY;
             _translationZ = data.TranslationZ;
-            
+
 
             _angleX = data.AngleX;
             _angleY = data.AngleY;
@@ -117,32 +98,41 @@ namespace SphereBuilder
             _axisZ = data.AxisZ;
 
             // Заполнение полей на форме
-            radiusTrackBar.Value = _radius;
+            
             radiusTextBox.Text = _radius.ToString();
+            radiusTrackBar.Value = _radius;
+
             stacksTextBox.Text = _stacks.ToString();
+            stacksTrackBar.Value = _stacks;
+
             slicesTextBox.Text = _slices.ToString();
+            slicesTrackBar.Value = _slices;
+            
+            sphereColorIndicator.BackColor = data.Color;
+
             trackBar1.Value = _deltaRotate;
+            
         }
         private void openGLControl1_OpenGLDraw(object sender, SharpGL.RenderEventArgs args) // Динамическое взаимодействие со сферами
         {
             List<MySphere> spheres = new List<MySphere>();
-            switch(numberOfSpheres)
+            switch (_numberOfSpheres)
             {
                 case 1:
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
                     _maxRadius = 20;
                     break;
                 case 2:
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, -20.0f, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, 20.0f, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, -20.0f, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, 20.0f, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
                     _maxRadius = 14;
                     break;
                 case 3:
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, -15.0f, -10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, 15.0f, -10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
-                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, _translationX, 10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, -15.0f, -10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, 15.0f, -10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
+                    spheres.Add(new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, _translationX, 10.0f, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ));
                     _maxRadius = 12;
-                    
+
                     break;
 
             }
@@ -158,83 +148,16 @@ namespace SphereBuilder
             OpenGlArtist.DrawingSpheres(openGLControl1, spheres, _rotationAngle);
             _rotationAngle += spheres[0].Speed;
         }
-        // Загрузка данных с сервера
-
-
-
-
-        /// //////////////////////////////////////////////////////////////////////
-        
-        private void loadDataFromServerButton_Click(object sender, EventArgs e)
-        {
-            ServerAPI serv = new ServerAPI();
-            int[] r = ServerAPI.GetMessageFromSocket(11000);
-            if (r[0] != 228)
-            {
-                _radius = r[0];
-
-            }
-            else
-            {
-                MessageBox.Show("Somethin is wrong with server");
-                return;
-            }
-
-            if (r[1] == 1)
-            {
-            }
-            _stacks = r[2];
-            _slices = r[3];
-            MessageBox.Show("We get from Server : \nSphere Radius = " + r[0] + "\nSphere Color = Purple" + "\nSphere Stacks = " + r[2] + "\nSphere Slices = " + r[3]);
-        }
         private void saveToWordButton_Click(object sender, EventArgs e)
         {
-
+            SaveSystem.SaveToWord();
         }
-        //Helper
-        private void startHelperButton_Click(object sender, EventArgs e)
-        {
-            Process process = Process.Start("help.chm");
-            int id = process.Id;
-            Process tempProc = Process.GetProcessById(id);
-            this.Visible = false;
-            tempProc.WaitForExit();
-            this.Visible = true;
-        }
-
-
-
-        ////////////////////////////////////////////////////////////////////////////
-
         
-
-        // Создание изображения сферы
-        private void CreateSphereImage(string path)
-        {
-            try
-            {
-                // Задержка для того чтобы OpenFileDialog успел закрыть и не влез в скриншот
-                Thread.Sleep(200);
-                // Создание точечного рисунка и Graphics
-                Bitmap printscreen = new Bitmap(openGLControl1.Width + 150, openGLControl1.Height + 110);
-                Graphics graphics = Graphics.FromImage(printscreen);
-                // Верхняя левая точка скриншота
-                Point point = new Point(this.Left + openGLControl1.Left + 70, this.Top + openGLControl1.Top + 80);
-                // Делаем скриншот области начиная с указанной точки рахмером printscreen.Size
-                graphics.CopyFromScreen(point, Point.Empty, printscreen.Size);
-                // Сохраняем по пути в jpeg
-                printscreen.Save(path, System.Drawing.Imaging.ImageFormat.Jpeg);
-            }
-            catch(Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
-        }
         // Панель управления цветом сферы
         private void setNewColorButton_Click(object sender, EventArgs e)
         {
             ColorDialog _colorDialog = new ColorDialog();
-            if(_colorDialog.ShowDialog() == DialogResult.OK)
+            if (_colorDialog.ShowDialog() == DialogResult.OK)
             {
                 _sphereColor = _colorDialog.Color;
             }
@@ -283,11 +206,11 @@ namespace SphereBuilder
         // Панель управления стилем отрисовки
         private void linesRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            _style = DrawStyle.Line;
+            _style = DrawStyle.Point;
         }
         private void pointsRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            _style = DrawStyle.Point;
+            _style = DrawStyle.Line;
         }
 
         // Панель управления радиусом сферы
@@ -335,75 +258,8 @@ namespace SphereBuilder
         // Сохранение в Excel
         private void microsoftExcelToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Создание диалога
-            SaveFileDialog _saveFileDialog = new SaveFileDialog();
-            // Настройка фильтра под таблицы Excel
-            _saveFileDialog.Filter = "Excel Files(*.xlsx)|*.xlsx";
-            // При открытии и нажатии "OK"
-            if (_saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                string filePath = _saveFileDialog.FileName;
-                // Создаем объект класса ExcelSave для сохранения данных
-                using (ExcelSave helper = new ExcelSave())
-                {
-                    if (helper.Open(filePath))
-                    {
-                        // Запись данных
-                        helper.SetText("A1", "Время сохранения:");
-                        helper.SetTime("B1", DateTime.Now);
-
-                        helper.SetText("A3", "Тип построения:");
-                        helper.SetText("B3", _style.ToString());
-
-                        helper.SetText("A4", "Кол-во меридиан:");
-                        helper.SetText("B4", _stacks);
-
-                        helper.SetText("A5", "Кол-во парралелей:");
-                        helper.SetText("B5", _slices);
-
-                        helper.SetText("A6", "Радиус сферы:");
-                        helper.SetText("B6", _radius);
-
-                        helper.SetText("A7", "Скорость сферы:");
-                        helper.SetText("B7", _deltaRotate);
-
-                        helper.SetText("A8", "Цвет сферы:");
-                        helper.SetText("B8", _sphereColor.Name.ToString());
-
-                        helper.SetText("A10", "Угол X:");
-                        helper.SetText("B10", _angleX);
-
-                        helper.SetText("A11", "Угол Y:");
-                        helper.SetText("B11", _angleY);
-
-                        helper.SetText("A12", "Угол Z:");
-                        helper.SetText("B12", _angleZ);
-
-                        helper.SetText("A14", "|| оси X:");
-                        helper.SetText("B14", _axisX);
-
-                        helper.SetText("A15", "|| оси Y:");
-                        helper.SetText("B15", _axisY);
-
-                        helper.SetText("A16", "|| оси Z:");
-                        helper.SetText("B16", _axisZ);
-
-                        helper.SetText("D1", "Изображение сферы:");
-                        // Создание изображения сферы
-                        CreateSphereImage(_sphereImagePath);
-
-                        // Добавление изображения в Excel
-                        helper.SetImage(3, 2, _sphereImagePath);
-
-                        //Сохранение
-                        helper.Save();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Файл сохранения не найден!");
-                    }
-                }
-            }
+            MySphere currentSphereSettings = new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ);
+            SaveSystem.SaveToExcel(this, openGLControl1, currentSphereSettings);
         }
         private void microsoftPowerPointToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -411,7 +267,59 @@ namespace SphereBuilder
         }
         private void импортироватьНастройкиССервераToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //
+            int _port = 8888;
+            int _size = 1024;
+            string _server = "127.0.0.1";
+            // Создание конечной точки по IP и порту
+            IPEndPoint _iPEndPoint = new IPEndPoint(IPAddress.Parse(_server), _port);
+            // Создание сокета(v4, потоковый, TCP)
+            Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            // Попытка связи с сервером
+            _socket.Connect(_iPEndPoint);
+            // Создание отправляемого сообщения
+            String _text = "Hello, server!";
+            // Перевод сообщения в кодировку ASCII и заполнение массива байтов
+            byte[] _sendbytes = Encoding.ASCII.GetBytes(_text + '.');
+            // Отправка сообщения серверу
+            _socket.Send(_sendbytes);
+            byte[] _byteRec = new byte[_size];
+            // Принятие сообщения от сервера
+            int _len = _socket.Receive(_byteRec);
+            // Инициализация string переменной под сообщение от сервера
+            string _textServer = "";
+            // Декодировка сообщения от сервера
+            _textServer = Encoding.ASCII.GetString(_byteRec, 0, _len);
+            string[] data = _textServer.Split('|');
+            // Инициирование закрытия сокета клиента
+            _socket.Shutdown(SocketShutdown.Both);
+            // Закрытие сокета клиента
+            _socket.Close();
+            _numberOfSpheres = Convert.ToInt32(data[0]);
+
+            _radius = Convert.ToInt32(data[1]);
+            _stacks = Convert.ToInt32(data[2]);
+            _slices = Convert.ToInt32(data[3]);
+
+            _deltaRotate = Convert.ToInt32(data[4]);
+
+            _angleX = Convert.ToSingle(data[5]);
+            _angleY = Convert.ToSingle(data[6]);
+            _angleZ = Convert.ToSingle(data[7]);
+
+            _sphereColor = Color.FromName(data[8]);
+
+
+            MessageBox.Show($"Получены настройки от сервера" +
+                $"\r\nРадиус == {_radius}" +
+                $"\r\nКол-во параллелей == {_stacks}" +
+                $"\r\nКол-во меридиан == {_slices}" +
+                $"\r\nСкорость вращения == {_deltaRotate}" +
+                $"\r\nУгол X == {_angleX}" +
+                $"\r\nУгол Y == {_angleY}" +
+                $"\r\nУгол Z == {_angleZ}" +
+                $"\r\nЦвет == {_sphereColor}" +
+                $"\r\n" +
+                $"\r\nОстальные настройки остались без изменений!");
         }
         private void выходToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -541,21 +449,10 @@ namespace SphereBuilder
             _axisZ = false;
         }
 
-        
-        
-        
-        
         private void SaveDataToFile(object sender, EventArgs e)
         {
-            BinaryFormatter _formatter;
-            FileStream _stream;
-            MySphere data;
-
-            _stream = new FileStream(_saveFilePath, FileMode.OpenOrCreate);
-            _formatter = new BinaryFormatter();
-            data = new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ);
-            _formatter.Serialize(_stream, data);
-            _stream.Close();
+            MySphere data = new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ);
+            SaveSystem.SaveSettings(data);
         }
 
         private void trackBar1_Scroll_1(object sender, EventArgs e)
@@ -565,15 +462,42 @@ namespace SphereBuilder
         // Управление режимом отображения(кол-во сфер)
         private void двеСферыToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            numberOfSpheres = 2;
+            _numberOfSpheres = 2;
         }
         private void триСферыToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            numberOfSpheres = 3;
+            _numberOfSpheres = 3;
         }
         private void однаСфераToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            numberOfSpheres = 1;
+            _numberOfSpheres = 1;
+        }
+
+        private void открытьHelperToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Process process = Process.Start(_helperPath);
+                int id = process.Id;
+                Process tempProc = Process.GetProcessById(id);
+                this.Visible = false;
+                tempProc.WaitForExit();
+                this.Visible = true;
+            }
+            catch
+            {
+                MessageBox.Show("Не удалость найти Helper!");
+            }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void radiusTextBox_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
@@ -587,13 +511,15 @@ namespace SphereBuilder
         public SharpGL.SceneGraph.Quadrics.DrawStyle Style { get; private set; }
         public Color Color { get; private set; }
 
+        public int Count { get; private set; }
+
         public int Speed { get; private set; }
 
         // Положение в пространстве
         public float TranslationX { get; private set; }
-        public float TranslationY { get; private set; } 
+        public float TranslationY { get; private set; }
         public float TranslationZ { get; private set; }
-        
+
         // Углы наклона относительно каждой оси
         public float AngleX { get; private set; }
         public float AngleY { get; private set; }
@@ -603,13 +529,14 @@ namespace SphereBuilder
         public bool AxisX { get; private set; }
         public bool AxisY { get; private set; }
         public bool AxisZ { get; private set; }
-        internal MySphere(int radius, int stacks, int slices, SharpGL.SceneGraph.Quadrics.DrawStyle style, Color color, int speed, float translstionX, float translationY, float translationZ, float angleX, float angleY, float angleZ, bool axisX, bool axisY, bool axisZ)
+        internal MySphere(int radius, int stacks, int slices, SharpGL.SceneGraph.Quadrics.DrawStyle style, Color color, int count, int speed, float translstionX, float translationY, float translationZ, float angleX, float angleY, float angleZ, bool axisX, bool axisY, bool axisZ)
         {
             Radius = radius;
             Stacks = stacks;
             Slices = slices;
             Style = style;
             Color = color;
+            Count = count;
             Speed = speed;
 
             TranslationX = translstionX;
@@ -631,7 +558,6 @@ namespace SphereBuilder
         public static void DrawingSpheres(OpenGLControl openGLControl, List<MySphere> drawingSpheres, float angle)
         {
             OpenGL OpenGL = openGLControl.OpenGL;
-
             OpenGL.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             OpenGL.LoadIdentity();
             GLColor glClr = new GLColor(0.0f, 0.0f, 1.0f, 0.1f);
@@ -642,11 +568,11 @@ namespace SphereBuilder
             OpenGL.Translate(0.0f, 0.0f, -70.0f);
             OpenGL.Rotate(angle, Convert.ToInt32(drawingSpheres[0].AxisX) * 0.5f, Convert.ToInt32(drawingSpheres[0].AxisY) * 0.5f, Convert.ToInt32(drawingSpheres[0].AxisZ) * 0.5f);
 
-            SharpGL.SceneGraph.Quadrics.Sphere[] spheres = new Sphere[drawingSpheres.Count];  
-            for(int i = 0; i < spheres.Length; i++)
+            SharpGL.SceneGraph.Quadrics.Sphere[] spheres = new Sphere[drawingSpheres.Count];
+            for (int i = 0; i < spheres.Length; i++)
             {
                 spheres[i] = new SharpGL.SceneGraph.Quadrics.Sphere();
-               
+
                 spheres[i].Radius = drawingSpheres[i].Radius;
                 spheres[i].Slices = drawingSpheres[i].Slices;
                 spheres[i].Stacks = drawingSpheres[i].Stacks;
@@ -673,6 +599,157 @@ namespace SphereBuilder
             }
             OpenGL.End();
             OpenGL.Flush();
+        }
+    }
+
+    internal abstract class SaveSystem
+    {
+        private const string _sphereImagePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SphereImage.jpeg";
+        private const string _saveFilePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SaveData.save";
+        public static void SaveToWord()
+        {
+
+        }
+        public static void SaveToExcel(Form1 form, OpenGLControl openGLControl1, MySphere sphere)
+        {
+            // Создание диалога
+            SaveFileDialog _saveFileDialog = new SaveFileDialog();
+            // Настройка фильтра под таблицы Excel
+            _saveFileDialog.Filter = "Excel Files(*.xlsx)|*.xlsx";
+            // При открытии и нажатии "OK"
+            if (_saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filePath = _saveFileDialog.FileName;
+                // Создаем объект класса ExcelSave для сохранения данных
+                using (ExcelSave helper = new ExcelSave())
+                {
+                    if (helper.Open(filePath))
+                    {
+                        // Запись данных
+                        helper.SetText("A1", "Время сохранения:");
+                        helper.SetTime("B1", DateTime.Now);
+
+                        helper.SetText("A3", "Тип построения:");
+                        helper.SetText("B3", sphere.Style.ToString());
+
+                        helper.SetText("A4", "Кол-во меридиан:");
+                        helper.SetText("B4", sphere.Stacks);
+
+                        helper.SetText("A5", "Кол-во парралелей:");
+                        helper.SetText("B5", sphere.Slices);
+
+                        helper.SetText("A6", "Радиус сферы:");
+                        helper.SetText("B6", sphere.Radius);
+
+                        helper.SetText("A7", "Скорость сферы:");
+                        helper.SetText("B7", sphere.Speed);
+
+                        helper.SetText("A8", "Цвет сферы:");
+                        helper.SetText("B8", sphere.Color.Name.ToString());
+
+                        helper.SetText("A10", "Угол X:");
+                        helper.SetText("B10", sphere.AngleX);
+
+                        helper.SetText("A11", "Угол Y:");
+                        helper.SetText("B11", sphere.AngleY);
+
+                        helper.SetText("A12", "Угол Z:");
+                        helper.SetText("B12", sphere.AngleZ);
+
+                        helper.SetText("A14", "|| оси X:");
+                        helper.SetText("B14", sphere.AxisX);
+
+                        helper.SetText("A15", "|| оси Y:");
+                        helper.SetText("B15", sphere.AxisY);
+
+                        helper.SetText("A16", "|| оси Z:");
+                        helper.SetText("B16", sphere.AxisZ);
+
+                        helper.SetText("D1", "Изображение сферы:");
+                        // Создание изображения сферы
+                        SaveSphereImage(form, openGLControl1);
+
+                        // Добавление изображения в Excel
+                        helper.SetImage(3, 2, _sphereImagePath);
+
+                        //Сохранение
+                        helper.Save();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Файл сохранения не найден!");
+                    }
+                }
+            }
+        }
+        public static MySphere LoadSettings()
+        {
+            BinaryFormatter _formatter;
+            FileStream _stream;
+            MySphere data;
+            if (File.Exists(_saveFilePath) == false)
+            {
+                _formatter = new BinaryFormatter();
+                _stream = new FileStream(_saveFilePath, FileMode.Create);
+                data = new MySphere(13, 20, 20, DrawStyle.Line, Color.Red, 1, 1, 0, 0, 0, 0, 90, 90, true, false, false);
+                _formatter.Serialize(_stream, data);
+                _stream.Close();
+
+                MessageBox.Show("a");
+                _formatter = null;
+                _stream = null;
+                data = null;
+
+            }
+            // Инициализация нового бинарного конвертатора
+            _formatter = new BinaryFormatter();
+            // Инициализация поля взаимодействия с файлами
+            _stream = new FileStream(_saveFilePath, FileMode.Open);
+            // Инициализация поля для сохранения данных (RetainedInfo) прочтенной из файла инфо
+            data = _formatter.Deserialize(_stream) as MySphere;
+            // Закрытие файла
+            _stream.Close();
+            return data;
+        }
+        public static void SaveSettings(MySphere sphere)
+        {
+            try
+            {
+                BinaryFormatter _formatter;
+                FileStream _stream;
+
+                _stream = new FileStream(_saveFilePath, FileMode.OpenOrCreate);
+                _formatter = new BinaryFormatter();
+                _formatter.Serialize(_stream, sphere);
+                _stream.Close();
+            }
+            catch
+            {
+                MessageBox.Show("Не удалось сохранить настройки! Закройте, пожалуйста, файл сохранения!");
+            }
+        }
+
+        // Создание изображения сферы
+        public static void SaveSphereImage(Form1 form, OpenGLControl openGLControl1)
+        {
+            try
+            {
+                // Задержка для того чтобы OpenFileDialog успел закрыть и не влез в скриншот
+                Thread.Sleep(200);
+                // Создание точечного рисунка и Graphics
+                Bitmap printscreen = new Bitmap(openGLControl1.Width + 150, openGLControl1.Height + 110);
+                Graphics graphics = Graphics.FromImage(printscreen);
+                // Верхняя левая точка скриншота
+                Point point = new Point(form.Left + openGLControl1.Left + 70, form.Top + openGLControl1.Top + 80);
+                // Делаем скриншот области начиная с указанной точки рахмером printscreen.Size
+                graphics.CopyFromScreen(point, Point.Empty, printscreen.Size);
+                // Сохраняем по пути в jpeg
+                printscreen.Save(_sphereImagePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
         }
     }
 }

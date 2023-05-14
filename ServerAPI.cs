@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SphereBuilder
 {
-    class ServerAPI
+    abstract class ServerAPI
     {
-        internal static int[] GetMessageFromSocket(int port)
+        public static int[] GetMessageFromSocket(int port)
         {
 
             int[] arrError = { 228 };

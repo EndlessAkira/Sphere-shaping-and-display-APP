@@ -80,7 +80,6 @@ namespace SphereBuilder
             this.импортироватьНастройкиССервераToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helperToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.открытьHelperToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.оПрограммеToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.выходToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.режимРаботыToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.однаСфераToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -258,6 +257,7 @@ namespace SphereBuilder
             this.radiusTextBox.Name = "radiusTextBox";
             this.radiusTextBox.Size = new System.Drawing.Size(83, 27);
             this.radiusTextBox.TabIndex = 25;
+            this.radiusTextBox.TextChanged += new System.EventHandler(this.radiusTextBox_TextChanged);
             // 
             // setSphereRadiusButton
             // 
@@ -646,7 +646,6 @@ namespace SphereBuilder
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripMenuItem1,
             this.helperToolStripMenuItem,
-            this.оПрограммеToolStripMenuItem,
             this.выходToolStripMenuItem,
             this.режимРаботыToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
@@ -707,20 +706,15 @@ namespace SphereBuilder
             this.helperToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.открытьHelperToolStripMenuItem});
             this.helperToolStripMenuItem.Name = "helperToolStripMenuItem";
-            this.helperToolStripMenuItem.Size = new System.Drawing.Size(68, 24);
-            this.helperToolStripMenuItem.Text = "Helper";
+            this.helperToolStripMenuItem.Size = new System.Drawing.Size(57, 24);
+            this.helperToolStripMenuItem.Text = "HELP";
             // 
             // открытьHelperToolStripMenuItem
             // 
             this.открытьHelperToolStripMenuItem.Name = "открытьHelperToolStripMenuItem";
             this.открытьHelperToolStripMenuItem.Size = new System.Drawing.Size(199, 26);
             this.открытьHelperToolStripMenuItem.Text = "Открыть Helper";
-            // 
-            // оПрограммеToolStripMenuItem
-            // 
-            this.оПрограммеToolStripMenuItem.Name = "оПрограммеToolStripMenuItem";
-            this.оПрограммеToolStripMenuItem.Size = new System.Drawing.Size(118, 24);
-            this.оПрограммеToolStripMenuItem.Text = "О программе";
+            this.открытьHelperToolStripMenuItem.Click += new System.EventHandler(this.открытьHelperToolStripMenuItem_Click);
             // 
             // выходToolStripMenuItem
             // 
@@ -1051,6 +1045,7 @@ namespace SphereBuilder
             this.Text = "Курсовая работа \"Разработка приложения формирования и отображения сфер\" ст. гр. 1" +
     "0701221 Гайдуков С.Ю.";
             this.Deactivate += new System.EventHandler(this.SaveDataToFile);
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.stacksTrackBar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.slicesTrackBar)).EndInit();
@@ -1123,7 +1118,6 @@ namespace SphereBuilder
         private System.Windows.Forms.ToolStripMenuItem импортироватьНастройкиССервераToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem helperToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem открытьHelperToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem оПрограммеToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem выходToolStripMenuItem;
         private System.Windows.Forms.Label label16;
         private System.Windows.Forms.Panel axesPanel;
