@@ -1,43 +1,81 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Word;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Word = Microsoft.Office.Interop.Word;
+using System.Windows.Forms;
+using Application = Microsoft.Office.Interop.Word.Application;
 
 namespace SaveSystem
 {
-    class WordSave
+    public class WordSave
     {
-        private FileInfo _fileInfo;
-
-        public WordSave(string fileName)
+        private string fileName;
+        private string path;
+        private Application _wordApp;
+        private Document _document;
+        private Table _table;
+        public bool Open(string filePath)
         {
-            if (File.Exists(fileName))
+            try
             {
-                _fileInfo = new FileInfo(fileName);
-            } 
-            else
+                // Инициализация Word
+                _wordApp = new Application();
+                _document = _wordApp.Documents.Open(filePath);
+                fileName = Path.GetFileName(filePath);
+                return true;
+            }
+            catch
             {
-                throw new ArgumentException("File not found");
+                return false;
             }
         }
-
-        internal bool SetText(List<List<string>> list)
+        public void AddData(List<List<string>> data)
         {
-            Word.Application word = new Word.Application();
-            Word.Table table = word.Application.ActiveDocument.Tables.Add(word.Selection.Range, list.Count, 2);
+            _table = _document.Tables.Add(_document.Range(), data.Count, data[0].Count);
 
-            table.Borders.OutsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-            table.Borders.InsideLineStyle = Word.WdLineStyle.wdLineStyleSingle; 
-
-            for(int i = 0; i < list.Count; i++)
+            // Заполнение таблицы данными
+            for (int i = 0; i < data.Count; i++)
             {
-                for (int j = 0; j < 2; j++)
+                for (int j = 0; j < data[i].Count; j++)
                 {
-                    table.Cell(i, j).Range.Text = list[i][j];
+                    _table.Cell(i + 1, j + 1).Range.Text = data[i][j];
                 }
             }
-            //
-            return false;
         }
+        public void AddImage(string imagePath)
+        {
+            try
+            {
+                // Вставка изображения
+                Range range = _document.Range();
+                range = range.GoTo( Microsoft.Office.Interop.Word.WdGoToItem.wdGoToLine , Microsoft.Office.Interop.Word.WdGoToDirection.wdGoToLast);
+                range.InsertParagraphAfter();
+                range.InlineShapes.AddPicture(imagePath);
+                range.InsertParagraphAfter();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Произошла ошибка при вставке изображения: " + ex.Message);
+            }
+        }
+        public void Save()
+        {
+            try
+            {
+                // Сохранение документа
+
+                _document.Save();
+                _document.Close();
+                _wordApp.Quit();
+
+                MessageBox.Show($"Таблица успешно сохранена в файле {fileName}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Произошла ошибка при сохранении таблицы: " + ex.Message);
+            }
+        }
+
+
     }
 }

@@ -148,10 +148,6 @@ namespace SphereBuilder
             OpenGlArtist.DrawingSpheres(openGLControl1, spheres, _rotationAngle);
             _rotationAngle += spheres[0].Speed;
         }
-        private void saveToWordButton_Click(object sender, EventArgs e)
-        {
-            SaveSystem.SaveToWord();
-        }
         
         // Панель управления цветом сферы
         private void setNewColorButton_Click(object sender, EventArgs e)
@@ -253,7 +249,8 @@ namespace SphereBuilder
 
         private void microsoftWordToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //
+            MySphere currentSphereSettings = new MySphere(_radius, _stacks, _slices, _style, _sphereColor, _numberOfSpheres, _deltaRotate, _translationX, _translationY, _translationZ, _angleX, _angleY, _angleZ, _axisX, _axisY, _axisZ);
+            SaveSystem.SaveToWord(this, openGLControl1, currentSphereSettings);
         }
         // Сохранение в Excel
         private void microsoftExcelToolStripMenuItem_Click(object sender, EventArgs e)
@@ -606,9 +603,50 @@ namespace SphereBuilder
     {
         private const string _sphereImagePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SphereImage.jpeg";
         private const string _saveFilePath = "D:\\Uni\\2 курс 2 семестр\\РПВС\\РПВС курсовая\\SaveData.save";
-        public static void SaveToWord()
+        public static void SaveToWord(Form1 form, OpenGLControl openGLControl1, MySphere sphere)
         {
-
+            // Создание диалога
+            SaveFileDialog _saveFileDialog = new SaveFileDialog();
+            // Настройка фильтра под таблицы Excel
+            _saveFileDialog.Filter = "Word Files(*.docx)|*.docx";
+            // При открытии и нажатии "OK"
+            if (_saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filePath = _saveFileDialog.FileName;
+                WordSave file = new WordSave();
+                if(file.Open(filePath))
+                {
+                    // Создаем объект класса ExcelSave для сохранения данных
+                    List<List<string>> data = new List<List<string>>()
+                    {
+                        new List<string>() { "Время сохранения:", DateTime.Now.ToString() },
+                        new List<string>() { " ",  " " },
+                        new List<string>() { "Тип построения:",   sphere.Style.ToString() },
+                        new List<string>() { "Кол-во меридиан:",  sphere.Stacks.ToString() },
+                        new List<string>() { "Кол-во парралелей:",sphere.Slices.ToString() },
+                        new List<string>() { "Радиус сферы:", sphere.Radius.ToString() },
+                        new List<string>() { "Скорость сферы:",   sphere.Speed.ToString() },
+                        new List<string>() { " ",  " " },
+                        new List<string>() { "Угол X:", sphere.AngleX.ToString() },
+                        new List<string>() { "Угол Y:", sphere.AngleY.ToString() },
+                        new List<string>() { "Угол Z:", sphere.AngleZ.ToString() },
+                        new List<string>() { " ",  " " },
+                        new List<string>() { "|| оси X:", sphere.AxisX.ToString() },
+                        new List<string>() { "|| оси Y:", sphere.AxisY.ToString() },
+                        new List<string>() { "|| оси Z:", sphere.AxisZ.ToString() }
+                    };
+                    file.AddData(data);
+                    // Создание изображения сферы
+                    SaveSphereImage(form, openGLControl1);
+                    file.AddImage(_sphereImagePath);
+                    file.Save();
+                }
+                else
+                {
+                    MessageBox.Show("Не удалось открыть выбранный файл! Закройте файл и повторите попытку!");
+                }
+                
+            }
         }
         public static void SaveToExcel(Form1 form, OpenGLControl openGLControl1, MySphere sphere)
         {
